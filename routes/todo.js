@@ -1,34 +1,36 @@
 
 const express = require('express');
 const router = express.Router();
-const db = require('../db/conn')
+const db = require('../db/conn');
+const { ObjectId } = require('mongodb');
 
-
-db.connectToMongoDb(() => {
-    
-    router.get('/teste',  (req, res) => { 
-        res.send('servidor funcionando!')
-    })
+//middleware para passar os Ids corretamente no mongo via json na edição de post
+const checkBodyId = (req, res, next) => {
+    if ('_id' in req.body){
+        req.body._id = new ObjectId(req.body._id)
+    }
+    next()
+}
+//----------------------------------------------------
 
     router.get('/list', async (req, res) => {
-        const listDocuments = await db.findDocuments()
-        res.send(listDocuments)
-     
-    })
+        const result = await db.findDocuments()
+        res.send(result)     
+    })       
         
-    router.post('/add', (req, res) => {
-        res.send('Add list')
-    })
-    
-        router.patch('/update', (req, res) => {
-        res.send('Update list')
-    })
-    
+    router.post('/add', async (req, res) => {
+        const result = await db.insertDocuments(req.body)
+        res.send(result)       
+    })  
+ 
+    router.patch('/update', checkBodyId, async (req, res) => {
+        const result = await db.updateDocument(req.body)
+        res.send(result)
+        
+    })    
         router.delete('/delete', (req, res) => {
         res.send('Delete list')
     })
-
-})    
-
+ 
 module.exports = router;
 
